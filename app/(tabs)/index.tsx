@@ -1,98 +1,199 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { Link } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useActivites, formatDuree, Activite } from '../api/reservation/createReservationApi';
+
+
+const colors = {
+  red: '#e51a2e',
+  blue: '#4472c4',
+  black: '#000000',
+  grey: '#555555',
+  lightGrey: '#bbbbbb',
+  bgLight: '#f5f5f5',
+};
 
 export default function HomeScreen() {
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Parc National{'\n'}des Calanques</Text>
+          <Text style={styles.headerSubtitle}>Marseille · Cassis · La Ciotat</Text>
+        </View>
+
+        <View style={styles.card}>
+          <Ionicons name="leaf-outline" size={32} color={colors.blue} />
+          <Text style={styles.cardTitle}>Bienvenue</Text>
+          <Text style={styles.cardText}>
+            Explorez les plus belles calanques de la Méditerranée. Réservez vos activités directement depuis l'application.
+          </Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Activités disponibles</Text>
+
+        <Link href="/createReservation" asChild>
+          <TouchableOpacity style={styles.activityCard} activeOpacity={0.8}>
+            <View style={styles.activityIcon}>
+              <Ionicons name="boat-outline" size={28} color={colors.blue} />
+            </View>
+            <View style={styles.activityInfo}>
+              <Text style={styles.activityTitle}>Excursion en bateau</Text>
+              <Text style={styles.activityDesc}>Départ Vieux-Port · 2h · 20€</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color={colors.lightGrey} />
+          </TouchableOpacity>
         </Link>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <TouchableOpacity style={styles.activityCard} activeOpacity={0.8}>
+          <View style={styles.activityIcon}>
+            <Ionicons name="walk-outline" size={28} color={colors.blue} />
+          </View>
+          <View style={styles.activityInfo}>
+            <Text style={styles.activityTitle}>Randonnée guidée</Text>
+            <Text style={styles.activityDesc}>Calanque de Morgiou · 3h · 15€</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.lightGrey} />
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.activityCard} activeOpacity={0.8}>
+          <View style={styles.activityIcon}>
+            <Ionicons name="fish-outline" size={28} color={colors.blue} />
+          </View>
+          <View style={styles.activityInfo}>
+            <Text style={styles.activityTitle}>Plongée sous-marine</Text>
+            <Text style={styles.activityDesc}>Calanque de Sugiton · 2h30 · 45€</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color={colors.lightGrey} />
+        </TouchableOpacity>
+
+        {/* Bouton réserver */}
+        <Link href="/createReservation" asChild>
+          <TouchableOpacity style={styles.reserveButton} activeOpacity={0.8}>
+            <Ionicons name="calendar-outline" size={22} color="white" />
+            <Text style={styles.reserveButtonText}>FAIRE UNE RÉSERVATION</Text>
+          </TouchableOpacity>
+        </Link>
+
+        <Text style={styles.footer}>
+          Application Mobile · NGO · BTSSIO Jean Rostand
+        </Text>
+
+      </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: colors.bgLight,
   },
-  stepContainer: {
-    gap: 8,
+  content: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  header: {
+    backgroundColor: colors.blue,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: 'white',
+    lineHeight: 34,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 6,
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.black,
+    marginTop: 10,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  cardText: {
+    fontSize: 14,
+    color: colors.grey,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.black,
+    marginBottom: 12,
+  },
+  activityCard: {
+    backgroundColor: 'white',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 1,
+  },
+  activityIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
+    backgroundColor: '#eef2fb',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  activityInfo: {
+    flex: 1,
+  },
+  activityTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.black,
+  },
+  activityDesc: {
+    fontSize: 13,
+    color: colors.grey,
+    marginTop: 2,
+  },
+  reserveButton: {
+    backgroundColor: colors.red,
+    borderRadius: 16,
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    marginBottom: 16,
+  },
+  reserveButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+    marginLeft: 10,
+  },
+  footer: {
+    textAlign: 'center',
+    fontSize: 11,
+    color: colors.lightGrey,
+    marginTop: 8,
   },
 });
