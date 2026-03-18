@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
-import { getActivities } from '../../api/activitiesApi'; // Ajustez le chemin
 
+// On garde la même base que votre exemple qui marche
+const API_BASE_URL = 'http://webngo.sio.bts:8002/api';
 
 export interface Activity {
     id: number;
@@ -8,17 +9,22 @@ export interface Activity {
     description: string;
     tarif: number;
     duree: string;
-    image_url: string;
     type_id: number;
+    image_url: string;
 }
 
+const fetchActivities = async (): Promise<Activity[]> => {
+    const response = await fetch(`${API_BASE_URL}/activities`); // Adaptez si besoin (/activities/)
+    if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
+    }
+    return response.json();
+};
 
-const API_BASE_URL = 'http://webngo.sio.bts:8002';
-
-export default function ActivitiesScreen() {
-    const { data: activities, isLoading, isError, error } = useQuery({
-        queryKey: ['activities'],
-        queryFn: getActivities,
+export const useActivities = () => {
+    return useQuery<Activity[], Error>({
+        queryKey: ['activities_list'],
+        queryFn: fetchActivities,
+        staleTime: 5 * 60 * 1000,
     });
-
 };
