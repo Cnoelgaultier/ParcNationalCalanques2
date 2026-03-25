@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView, Image, Modal, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// Import des hooks de l'API
+// Import des hooks de l'API activité
 import { useActivities, useActivityById, Activity } from '../api/activite/activitiesApi';
+// Import du hook API des types d'activités
+import { useTypeActivites, TypeActivite } from '../api/typeActivite/typeActivitiesApi';
 
 // Import des styles globaux et des couleurs
 import { globalStyles, colors } from '../styles/globalStyles';
@@ -12,6 +14,10 @@ const IMAGE_BASE_URL = 'http://webngo.sio.bts:8002/';
 
 export default function ActivitiesScreen() {
     const { data: activities, isLoading: listLoading, isError: listError } = useActivities();
+
+    // Utilisation de ton nouveau hook !
+    const { data: types, isLoading: typesLoading } = useTypeActivites();
+
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const { data: detailData, isLoading: detailLoading, isError: detailError } = useActivityById(selectedId);
 
@@ -21,10 +27,6 @@ export default function ActivitiesScreen() {
     const [selectedType, setSelectedType] = useState<number | null>(null);
     const [maxDuree, setMaxDuree] = useState<string>('');
     const [minDuree, setMinDuree] = useState<string>('');
-
-
-    // Extraction dynamique des types d'activités disponibles dans la base
-    const uniqueTypes = Array.from(new Set(activities?.map(item => item.type_id) || []));
 
     // --- LOGIQUE DE FILTRAGE ---
     const filteredActivities = activities?.filter(item => {
@@ -36,8 +38,11 @@ export default function ActivitiesScreen() {
         }
 
         // Filtre par Tarif Max
-        if (maxTarif.trim() !== '' && item.tarif > parseFloat(maxTarif)) {
-            isValid = false;
+        if (maxTarif.trim() !== '') {
+            const tarifSaisi = parseFloat(maxTarif.replace(',', '.'));
+            if (item.tarif > tarifSaisi) {
+                isValid = false;
+            }
         }
 
         // Filtre par Durée Max
@@ -70,10 +75,56 @@ export default function ActivitiesScreen() {
 
     return (
         <View style={globalStyles.container}>
-            <ScrollView contentContainerStyle={globalStyles.scrollContent}>
-                <View style={globalStyles.actHeader}>
-                    <Text style={globalStyles.pageTitle}>Nos Activités</Text>
+
+            {/* --- EN-TÊTE ET CARROUSEL DES TYPES D'ACTIVITÉS --- */}
+            <View style={{ paddingTop: 20 }}>
+                <View style={[globalStyles.actHeader, { paddingHorizontal: 20 }]}>
+                    <Text style={[globalStyles.pageTitle, { marginBottom: 10, marginTop: 0 }]}>Nos Activités</Text>
                 </View>
+
+                {typesLoading ? (
+                    <ActivityIndicator size="small" color={colors.blue} style={{ marginBottom: 15 }} />
+                ) : (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={globalStyles.actTypesScroll}
+                        contentContainerStyle={globalStyles.actTypesContainer}
+                    >
+                        {/* Bouton "Toutes" */}
+                        <TouchableOpacity
+                            style={[globalStyles.actFilterChip, selectedType === null && globalStyles.actFilterChipSelected]}
+                            onPress={() => setSelectedType(null)}
+                        >
+                            <Text style={[globalStyles.actFilterChipText, selectedType === null && globalStyles.actFilterChipTextSelected]}>
+                                Toutes
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* Utilisation de l'interface TypeActivite  */}
+                        {types?.map((type: TypeActivite) => (
+                            <TouchableOpacity
+                                key={type.id}
+                                style={[
+                                    globalStyles.actFilterChip,
+                                    selectedType === type.id && globalStyles.actFilterChipSelected
+                                ]}
+                                onPress={() => setSelectedType(type.id)}
+                            >
+                                <Text style={[
+                                    globalStyles.actFilterChipText,
+                                    selectedType === type.id && globalStyles.actFilterChipTextSelected
+                                ]}>
+                                    {type.libelle}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                )}
+            </View>
+
+            {/* --- CONTENU PRINCIPAL --- */}
+            <ScrollView contentContainerStyle={[globalStyles.scrollContent, { paddingTop: 0 }]}>
 
                 {/* --- BOUTON POUR AFFICHER/MASQUER LES FILTRES --- */}
                 <TouchableOpacity
@@ -82,7 +133,7 @@ export default function ActivitiesScreen() {
                     activeOpacity={0.8}
                 >
                     <Text style={globalStyles.actFilterToggleText}>
-                        <Ionicons name="filter" size={16} /> Filtrer les résultats
+                        <Ionicons name="options-outline" size={16} /> Filtres avancés (Prix, Durée)
                     </Text>
                     <Ionicons name={showFilters ? "chevron-up" : "chevron-down"} size={20} color={colors.blue} />
                 </TouchableOpacity>
@@ -104,7 +155,7 @@ export default function ActivitiesScreen() {
                         <TextInput
                             style={globalStyles.actFilterInput}
                             placeholder="Ex: 00:00:00"
-                            keyboardType="default"
+                            keyboardType="numeric"
                             maxLength={8}
                             value={maxDuree}
                             onChangeText={(text) => setMaxDuree(formatTimeMask(text))}
@@ -114,38 +165,11 @@ export default function ActivitiesScreen() {
                         <TextInput
                             style={globalStyles.actFilterInput}
                             placeholder="Ex: 00:00:00"
-                            keyboardType="default"
+                            keyboardType="numeric"
                             maxLength={8}
                             value={minDuree}
                             onChangeText={(text) => setMinDuree(formatTimeMask(text))}
                         />
-                        {uniqueTypes.length > 0 && (
-                            <>
-                                <Text style={globalStyles.actFilterLabel}>Type d'activité (ID)</Text>
-                                <View style={globalStyles.actFilterRow}>
-                                    {/* Bouton "Tous" */}
-                                    <TouchableOpacity
-                                        style={[globalStyles.actFilterChip, selectedType === null && globalStyles.actFilterChipSelected]}
-                                        onPress={() => setSelectedType(null)}
-                                    >
-                                        <Text style={[globalStyles.actFilterChipText, selectedType === null && globalStyles.actFilterChipTextSelected]}>Tous</Text>
-                                    </TouchableOpacity>
-
-                                    {/* Boutons pour chaque type existant */}
-                                    {uniqueTypes.map(typeId => (
-                                        <TouchableOpacity
-                                            key={typeId}
-                                            style={[globalStyles.actFilterChip, selectedType === typeId && globalStyles.actFilterChipSelected]}
-                                            onPress={() => setSelectedType(typeId)}
-                                        >
-                                            <Text style={[globalStyles.actFilterChipText, selectedType === typeId && globalStyles.actFilterChipTextSelected]}>
-                                                Type {typeId}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            </>
-                        )}
                     </View>
                 )}
 
@@ -195,7 +219,7 @@ export default function ActivitiesScreen() {
                 </View>
             </ScrollView>
 
-            {/* MODAL (Reste inchangée) */}
+            {/* MODAL */}
             <Modal
                 visible={selectedId !== null}
                 animationType="slide"
