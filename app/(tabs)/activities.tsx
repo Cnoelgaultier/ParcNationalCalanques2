@@ -1,59 +1,192 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, Image, Modal } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView, Image, Modal, TextInput } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 // Import des hooks de l'API
 import { useActivities, useActivityById, Activity } from '../api/activite/activitiesApi';
 
-// On s'assure que l'URL se termine par un slash pour coller au code de ta page réservation
+// Import des styles globaux et des couleurs
+import { globalStyles, colors } from '../styles/globalStyles';
+
 const IMAGE_BASE_URL = 'http://webngo.sio.bts:8002/';
 
 export default function ActivitiesScreen() {
     const { data: activities, isLoading: listLoading, isError: listError } = useActivities();
-
-    // ID de l'activité sélectionnée pour la Modal
     const [selectedId, setSelectedId] = useState<number | null>(null);
-
-    // Chargement du détail via l'endpoint spécifique
     const { data: detailData, isLoading: detailLoading, isError: detailError } = useActivityById(selectedId);
 
+    // --- ÉTATS POUR LES FILTRES ---
+    const [showFilters, setShowFilters] = useState(false);
+    const [maxTarif, setMaxTarif] = useState<string>('');
+    const [selectedType, setSelectedType] = useState<number | null>(null);
+    const [maxDuree, setMaxDuree] = useState<string>('');
+    const [minDuree, setMinDuree] = useState<string>('');
+
+
+    // Extraction dynamique des types d'activités disponibles dans la base
+    const uniqueTypes = Array.from(new Set(activities?.map(item => item.type_id) || []));
+
+    // --- LOGIQUE DE FILTRAGE ---
+    const filteredActivities = activities?.filter(item => {
+        let isValid = true;
+
+        // Filtre par Type
+        if (selectedType !== null && item.type_id !== selectedType) {
+            isValid = false;
+        }
+
+        // Filtre par Tarif Max
+        if (maxTarif.trim() !== '' && item.tarif > parseFloat(maxTarif)) {
+            isValid = false;
+        }
+
+        // Filtre par Durée Max
+        if (maxDuree.length === 8 && item.duree > maxDuree) {
+            isValid = false;
+        }
+
+        // Filtre par Durée Min
+        if (minDuree.length === 8 && item.duree < minDuree) {
+            isValid = false;
+        }
+
+        return isValid;
+    });
+
+    // --- Format Masque durée ---
+    const formatTimeMask = (value: string) => {
+        const numbers = value.replace(/\D/g, '');
+
+        let formatted = numbers;
+        if (numbers.length > 2) {
+            formatted = `${numbers.slice(0, 2)}:${numbers.slice(2)}`;
+        }
+        if (numbers.length > 4) {
+            formatted = `${numbers.slice(0, 2)}:${numbers.slice(2, 4)}:${numbers.slice(4, 6)}`;
+        }
+
+        return formatted;
+    };
+
     return (
-        <View style={{ flex: 1 }}>
-            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-                <View style={styles.header}>
-                    <Text style={styles.pageTitle}>Nos Activités</Text>
+        <View style={globalStyles.container}>
+            <ScrollView contentContainerStyle={globalStyles.scrollContent}>
+                <View style={globalStyles.actHeader}>
+                    <Text style={globalStyles.pageTitle}>Nos Activités</Text>
                 </View>
 
+                {/* --- BOUTON POUR AFFICHER/MASQUER LES FILTRES --- */}
+                <TouchableOpacity
+                    style={globalStyles.actFilterToggle}
+                    onPress={() => setShowFilters(!showFilters)}
+                    activeOpacity={0.8}
+                >
+                    <Text style={globalStyles.actFilterToggleText}>
+                        <Ionicons name="filter" size={16} /> Filtrer les résultats
+                    </Text>
+                    <Ionicons name={showFilters ? "chevron-up" : "chevron-down"} size={20} color={colors.blue} />
+                </TouchableOpacity>
+
+                {/* --- ZONE DE FILTRES --- */}
+                {showFilters && (
+                    <View style={globalStyles.actFilterContainer}>
+
+                        <Text style={[globalStyles.actFilterLabel, { marginTop: 0 }]}>Budget Maximum (€)</Text>
+                        <TextInput
+                            style={globalStyles.actFilterInput}
+                            placeholder="Ex: 30"
+                            keyboardType="numeric"
+                            value={maxTarif}
+                            onChangeText={setMaxTarif}
+                        />
+
+                        <Text style={globalStyles.actFilterLabel}>Durée Maximum</Text>
+                        <TextInput
+                            style={globalStyles.actFilterInput}
+                            placeholder="Ex: 00:00:00"
+                            keyboardType="default"
+                            maxLength={8}
+                            value={maxDuree}
+                            onChangeText={(text) => setMaxDuree(formatTimeMask(text))}
+                        />
+
+                        <Text style={globalStyles.actFilterLabel}>Durée Minimum</Text>
+                        <TextInput
+                            style={globalStyles.actFilterInput}
+                            placeholder="Ex: 00:00:00"
+                            keyboardType="default"
+                            maxLength={8}
+                            value={minDuree}
+                            onChangeText={(text) => setMinDuree(formatTimeMask(text))}
+                        />
+                        {uniqueTypes.length > 0 && (
+                            <>
+                                <Text style={globalStyles.actFilterLabel}>Type d'activité (ID)</Text>
+                                <View style={globalStyles.actFilterRow}>
+                                    {/* Bouton "Tous" */}
+                                    <TouchableOpacity
+                                        style={[globalStyles.actFilterChip, selectedType === null && globalStyles.actFilterChipSelected]}
+                                        onPress={() => setSelectedType(null)}
+                                    >
+                                        <Text style={[globalStyles.actFilterChipText, selectedType === null && globalStyles.actFilterChipTextSelected]}>Tous</Text>
+                                    </TouchableOpacity>
+
+                                    {/* Boutons pour chaque type existant */}
+                                    {uniqueTypes.map(typeId => (
+                                        <TouchableOpacity
+                                            key={typeId}
+                                            style={[globalStyles.actFilterChip, selectedType === typeId && globalStyles.actFilterChipSelected]}
+                                            onPress={() => setSelectedType(typeId)}
+                                        >
+                                            <Text style={[globalStyles.actFilterChipText, selectedType === typeId && globalStyles.actFilterChipTextSelected]}>
+                                                Type {typeId}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            </>
+                        )}
+                    </View>
+                )}
+
                 {listLoading && (
-                    <View style={styles.centerContainer}>
-                        <ActivityIndicator size="large" color="#e51a2e" />
+                    <View style={globalStyles.centerContainer}>
+                        <ActivityIndicator size="large" color={colors.red} />
                     </View>
                 )}
 
                 {listError && (
-                    <View style={styles.errorBox}>
-                        <Text style={styles.errorText}>Erreur de connexion au serveur</Text>
+                    <View style={globalStyles.errorBox}>
+                        <Text style={globalStyles.errorText}>Erreur de connexion au serveur</Text>
                     </View>
                 )}
 
-                <View style={styles.listContainer}>
-                    {activities?.map((item: Activity) => (
+                {/* Affichage des activités filtrées */}
+                <View style={globalStyles.actListContainer}>
+                    {filteredActivities?.length === 0 && !listLoading && (
+                        <Text style={{ textAlign: 'center', color: colors.grey, marginTop: 20 }}>
+                            Aucune activité ne correspond à vos filtres.
+                        </Text>
+                    )}
+
+                    {filteredActivities?.map((item: Activity) => (
                         <TouchableOpacity
                             key={item.id}
                             activeOpacity={0.8}
                             onPress={() => setSelectedId(item.id)}
                         >
-                            <View style={styles.card}>
+                            <View style={globalStyles.card}>
                                 <Image
                                     source={{ uri: `${IMAGE_BASE_URL}${item.image_url}` }}
-                                    style={styles.cardImage}
+                                    style={globalStyles.cardImage}
                                     resizeMode="cover"
                                 />
-                                <View style={styles.cardBody}>
-                                    <Text style={styles.cardTitle}>{item.nom}</Text>
-                                    <Text style={styles.cardDesc} numberOfLines={2}>{item.description}</Text>
-                                    <View style={styles.cardRow}>
-                                        <Text style={styles.cardInfoText}>⏱ {item.duree}</Text>
-                                        <Text style={styles.priceText}>{item.tarif} €</Text>
+                                <View style={globalStyles.cardBody}>
+                                    <Text style={globalStyles.cardTitle}>{item.nom}</Text>
+                                    <Text style={globalStyles.cardDesc} numberOfLines={2}>{item.description}</Text>
+                                    <View style={globalStyles.cardRow}>
+                                        <Text style={globalStyles.infoTextBlue}>⏱ {item.duree}</Text>
+                                        <Text style={globalStyles.priceTextRed}>{item.tarif} €</Text>
                                     </View>
                                 </View>
                             </View>
@@ -61,54 +194,56 @@ export default function ActivitiesScreen() {
                     ))}
                 </View>
             </ScrollView>
+
+            {/* MODAL (Reste inchangée) */}
             <Modal
                 visible={selectedId !== null}
                 animationType="slide"
                 transparent={true}
                 onRequestClose={() => setSelectedId(null)}
             >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                <View style={globalStyles.modalOverlay}>
+                    <View style={globalStyles.modalContent}>
 
                         {detailLoading ? (
-                            <View style={styles.centerContainer}>
-                                <ActivityIndicator size="large" color="#e51a2e" />
+                            <View style={globalStyles.centerContainer}>
+                                <ActivityIndicator size="large" color={colors.red} />
                                 <Text style={{ marginTop: 10 }}>Chargement...</Text>
                             </View>
                         ) : detailError ? (
-                            <View style={styles.centerContainer}>
-                                <Text style={styles.errorText}>Impossible de charger le détail</Text>
+                            <View style={globalStyles.centerContainer}>
+                                <Text style={globalStyles.errorText}>Impossible de charger le détail</Text>
                             </View>
                         ) : detailData && (
                             <ScrollView bounces={false}>
                                 <Image
                                     source={{ uri: `${IMAGE_BASE_URL}${detailData.image_url}` }}
-                                    style={styles.modalImage}
+                                    style={globalStyles.actModalImage}
                                     resizeMode="cover"
                                 />
-                                <View style={styles.modalBody}>
-                                    <Text style={styles.modalTitle}>{detailData.nom}</Text>
+                                <View style={globalStyles.modalBody}>
+                                    <Text style={globalStyles.actModalTitle}>{detailData.nom}</Text>
 
-                                    <View style={styles.modalRow}>
-                                        <View style={styles.badge}>
-                                            <Text style={styles.modalInfoText}>⏱ {detailData.duree}</Text>
+                                    <View style={globalStyles.actModalRow}>
+                                        <View style={globalStyles.actBadge}>
+                                            <Text style={globalStyles.infoTextBlue}>⏱ {detailData.duree}</Text>
                                         </View>
-                                        <View style={styles.badge}>
-                                            <Text style={styles.modalPriceText}>{detailData.tarif} €</Text>
+                                        <View style={globalStyles.actBadge}>
+                                            <Text style={globalStyles.priceTextRed}>{detailData.tarif} €</Text>
                                         </View>
                                     </View>
 
-                                    <Text style={styles.modalLabel}>Description</Text>
-                                    <Text style={styles.modalDescription}>{detailData.description}</Text>
+                                    <Text style={globalStyles.label}>Description</Text>
+                                    <Text style={globalStyles.actModalDescription}>{detailData.description}</Text>
                                 </View>
                             </ScrollView>
                         )}
 
                         <TouchableOpacity
-                            style={styles.closeButton}
+                            style={globalStyles.primaryButton}
                             onPress={() => setSelectedId(null)}
                         >
-                            <Text style={styles.closeButtonText}>FERMER</Text>
+                            <Text style={globalStyles.primaryButtonText}>FERMER</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -116,35 +251,3 @@ export default function ActivitiesScreen() {
         </View>
     );
 }
-
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
-    scrollContent: { padding: 20, paddingBottom: 40 },
-    header: { marginBottom: 20, marginTop: 10 },
-    pageTitle: { fontSize: 24, fontWeight: 'bold', color: '#000' },
-    centerContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
-    errorBox: { backgroundColor: '#fff0f0', padding: 15, borderRadius: 10, marginBottom: 20 },
-    errorText: { color: '#e51a2e', textAlign: 'center', fontWeight: 'bold' },
-    listContainer: { gap: 16 },
-    card: { backgroundColor: '#f5f7ff', borderRadius: 16, overflow: 'hidden', elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
-    cardImage: { width: '100%', height: 180 },
-    cardBody: { padding: 16 },
-    cardTitle: { fontSize: 18, fontWeight: 'bold', color: '#000' },
-    cardDesc: { fontSize: 14, color: '#555', marginVertical: 8 },
-    cardRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-    cardInfoText: { fontSize: 14, fontWeight: '600', color: '#4472c4' },
-    priceText: { fontSize: 18, fontWeight: 'bold', color: '#e51a2e' },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, height: '85%', overflow: 'hidden' },
-    modalImage: { width: '100%', height: 250 },
-    modalBody: { padding: 24 },
-    modalTitle: { fontSize: 24, fontWeight: 'bold', color: '#000', marginBottom: 15 },
-    modalRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-    badge: { backgroundColor: '#f0f4ff', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
-    modalInfoText: { color: '#4472c4', fontWeight: 'bold' },
-    modalPriceText: { color: '#e51a2e', fontWeight: 'bold' },
-    modalLabel: { fontSize: 18, fontWeight: 'bold', color: '#000', marginBottom: 10 },
-    modalDescription: { fontSize: 15, color: '#444', lineHeight: 22 },
-    closeButton: { backgroundColor: '#e51a2e', padding: 18, alignItems: 'center', margin: 20, borderRadius: 12 },
-    closeButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
-});
