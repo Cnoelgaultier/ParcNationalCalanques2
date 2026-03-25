@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity,
     ScrollView, KeyboardAvoidingView, Platform,
-    StyleSheet, ActivityIndicator, Modal, FlatList, Image
+    StyleSheet, ActivityIndicator, Modal, FlatList, Image, Alert
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { useActivites, formatDuree, Activite } from '../api/reservation/createReservationApi';
+import {
+    useActivites, useAvailability, useCreateReservation,
+    formatDuree, formatDateForApi, Activite
+} from '../api/reservation/createReservationApi';
 
 const API_BASE_URL = 'http://webngo.sio.bts:8002/';
 
@@ -20,13 +23,69 @@ const colors = {
 };
 
 export default function CreateReservation() {
-    const [date, setDate] = useState('');
+    const [date, setDate] = useState(''); // format JJ/MM/AAAA affiché
     const [nbParticipants, setNbParticipants] = useState('1');
     const [heure, setHeure] = useState('');
     const [activiteSelectionnee, setActiviteSelectionnee] = useState<Activite | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
 
     const { data: activites, isLoading, isError } = useActivites();
+    const { mutate: creerReservation, isPending } = useCreateReservation();
+
+    const nb = Math.max(1, parseInt(nbParticipants || '1'));
+    const dateApi = formatDateForApi(date); // YYYY-MM-DD pour l'API
+
+    // Fetch dispo uniquement si activité + date valide
+    const {
+        data: availability,
+        isLoading: isLoadingDispo,
+        isFetching: isFetchingDispo,
+    } = useAvailability(activiteSelectionnee?.id ?? null, dateApi);
+
+    const placesDisponibles = availability?.disponible_jour ?? null;
+    const quotaJour = availability?.quota_jour ?? null;
+    const placesApres = placesDisponibles !== null ? placesDisponibles - nb : null;
+    const peutReserver =
+        placesApres !== null &&
+        placesApres >= 0 &&
+        date.trim() !== '' &&
+        heure.trim() !== '' &&
+        !isPending;
+
+    // Couleur de la jauge selon les places restantes
+    const getDispoColor = () => {
+        if (placesApres === null) return colors.lightGrey;
+        if (placesApres < 0) return colors.red;
+        if (placesApres < 5) return '#f0a500';
+        return colors.lightGreen;
+    };
+
+    const handleAjouterAuPanier = () => {
+        if (!activiteSelectionnee) return;
+        if (!date.trim() || !heure.trim()) {
+            Alert.alert('Champs manquants', 'Veuillez renseigner une date et une heure.');
+            return;
+        }
+        if (placesApres !== null && placesApres < 0) {
+            Alert.alert('Plus de places', `Il ne reste que ${placesDisponibles} place(s) pour cette date.`);
+            return;
+        }
+
+        creerReservation(
+            { activite_id: activiteSelectionnee.id, date: dateApi, heure, nb_participants: nb },
+            {
+                onSuccess: () => {
+                    Alert.alert('Succès', `"${activiteSelectionnee.nom}" ajouté au panier !`);
+                    setDate('');
+                    setHeure('');
+                    setNbParticipants('1');
+                },
+                onError: (error) => {
+                    Alert.alert('Erreur', error.message || 'Une erreur est survenue.');
+                },
+            }
+        );
+    };
 
     return (
         <KeyboardAvoidingView
@@ -43,7 +102,6 @@ export default function CreateReservation() {
 
                 {/* Sélection de l'activité */}
                 <Text style={styles.label}>Choisir une activité</Text>
-
                 <TouchableOpacity
                     style={styles.selectButton}
                     onPress={() => setModalVisible(true)}
@@ -80,11 +138,10 @@ export default function CreateReservation() {
                     </View>
                 )}
 
-                {/* Détails de l'activité sélectionnée */}
                 {activiteSelectionnee && (
                     <>
+                        {/* Card activité */}
                         <View style={styles.card}>
-                            {/* Image principale */}
                             <Image
                                 source={{ uri: `${API_BASE_URL}${activiteSelectionnee.image_url}` }}
                                 style={styles.cardImage}
@@ -106,14 +163,17 @@ export default function CreateReservation() {
                             </View>
                         </View>
 
+                        {/* Date */}
                         <Text style={styles.label}>Sélectionner une date</Text>
                         <TextInput
                             placeholder="JJ/MM/AAAA"
                             value={date}
                             onChangeText={setDate}
                             style={styles.input}
+                            keyboardType="numeric"
                         />
 
+                        {/* Heure */}
                         <Text style={styles.label}>Sélectionner une heure</Text>
                         <TextInput
                             placeholder="Ex: 14:00"
@@ -122,15 +182,53 @@ export default function CreateReservation() {
                             style={styles.input}
                         />
 
-                        <View style={styles.infoBox}>
-                            <Ionicons name="information-circle-outline" size={20} color={colors.lightGreen} />
-                            <Text style={styles.infoText}>14 places restantes (Quota respecté)</Text>
-                        </View>
+                        {/* Jauge disponibilité — s'affiche seulement si date valide */}
+                        {dateApi !== '' && (
+                            <View style={[
+                                styles.infoBox,
+                                placesApres !== null && placesApres < 0 && styles.infoBoxError,
+                                placesApres !== null && placesApres >= 0 && placesApres < 5 && styles.infoBoxWarning,
+                            ]}>
+                                {isLoadingDispo || isFetchingDispo ? (
+                                    <ActivityIndicator size="small" color={colors.blue} />
+                                ) : (
+                                    <>
+                                        <Ionicons
+                                            name="information-circle-outline"
+                                            size={20}
+                                            color={getDispoColor()}
+                                        />
+                                        <View style={{ flex: 1, marginLeft: 8 }}>
+                                            <Text style={[styles.infoText, { color: getDispoColor() }]}>
+                                                {placesDisponibles === null
+                                                    ? 'Entrez une date valide'
+                                                    : placesApres! < 0
+                                                        ? `Pas assez de places — ${placesDisponibles} disponible(s)`
+                                                        : `${placesApres} place(s) restante(s) après réservation`}
+                                            </Text>
+                                            {/* Barre de progression */}
+                                            {placesDisponibles !== null && quotaJour !== null && (
+                                                <View style={styles.progressBar}>
+                                                    <View style={[
+                                                        styles.progressFill,
+                                                        {
+                                                            width: `${Math.min(100, (placesDisponibles / quotaJour) * 100)}%`,
+                                                            backgroundColor: getDispoColor(),
+                                                        }
+                                                    ]} />
+                                                </View>
+                                            )}
+                                        </View>
+                                    </>
+                                )}
+                            </View>
+                        )}
 
+                        {/* Participants */}
                         <Text style={styles.label}>Nombre de participants</Text>
                         <View style={styles.counter}>
                             <TouchableOpacity
-                                onPress={() => setNbParticipants(Math.max(1, parseInt(nbParticipants) - 1).toString())}
+                                onPress={() => setNbParticipants(Math.max(1, nb - 1).toString())}
                                 style={styles.counterBtn}
                             >
                                 <Text style={styles.counterBtnText}>-</Text>
@@ -138,40 +236,48 @@ export default function CreateReservation() {
                             <TextInput
                                 keyboardType="numeric"
                                 value={nbParticipants}
-                                onChangeText={setNbParticipants}
+                                onChangeText={(v) => setNbParticipants(v.replace(/[^0-9]/g, ''))}
                                 style={styles.counterInput}
                             />
                             <TouchableOpacity
-                                onPress={() => setNbParticipants((parseInt(nbParticipants) + 1).toString())}
+                                onPress={() => setNbParticipants((nb + 1).toString())}
                                 style={styles.counterBtn}
                             >
                                 <Text style={styles.counterBtnText}>+</Text>
                             </TouchableOpacity>
                         </View>
 
+                        {/* Total */}
                         <View style={styles.totalBox}>
                             <Text style={styles.totalLabel}>Total estimé</Text>
                             <Text style={styles.totalAmount}>
-                                {(activiteSelectionnee.tarif * parseInt(nbParticipants || '1')).toFixed(2)} €
+                                {(activiteSelectionnee.tarif * nb).toFixed(2)} €
                             </Text>
                         </View>
 
+                        {/* Bouton */}
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            style={styles.cartButton}
-                            onPress={() => alert(`"${activiteSelectionnee.nom}" ajouté au panier !`)}
+                            style={[styles.cartButton, !peutReserver && styles.cartButtonDisabled]}
+                            disabled={!peutReserver}
+                            onPress={handleAjouterAuPanier}
                         >
-                            <Ionicons name="cart-outline" size={24} color="white" />
-                            <Text style={styles.cartButtonText}>AJOUTER AU PANIER</Text>
+                            {isPending ? (
+                                <ActivityIndicator size="small" color="white" />
+                            ) : (
+                                <>
+                                    <Ionicons name="cart-outline" size={24} color="white" />
+                                    <Text style={styles.cartButtonText}>AJOUTER AU PANIER</Text>
+                                </>
+                            )}
                         </TouchableOpacity>
                     </>
                 )}
 
                 <Text style={styles.footer}>Application Mobile · NGO · BTSSIO Jean Rostand</Text>
-
             </ScrollView>
 
-            {/* Modal liste des activités */}
+            {/* Modal */}
             <Modal
                 visible={modalVisible}
                 animationType="slide"
@@ -186,7 +292,6 @@ export default function CreateReservation() {
                                 <Ionicons name="close" size={24} color={colors.black} />
                             </TouchableOpacity>
                         </View>
-
                         {isLoading ? (
                             <ActivityIndicator size="large" color={colors.blue} style={{ marginTop: 40 }} />
                         ) : (
@@ -201,6 +306,7 @@ export default function CreateReservation() {
                                         ]}
                                         onPress={() => {
                                             setActiviteSelectionnee(item);
+                                            setNbParticipants('1');
                                             setModalVisible(false);
                                         }}
                                     >
@@ -230,7 +336,6 @@ export default function CreateReservation() {
                     </View>
                 </View>
             </Modal>
-
         </KeyboardAvoidingView>
     );
 }
@@ -257,7 +362,11 @@ const styles = StyleSheet.create({
     cardInfo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     cardInfoText: { fontSize: 14, fontWeight: '600', color: colors.black },
     infoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#a8d08d20', borderWidth: 1, borderColor: colors.lightGreen, borderRadius: 12, padding: 14, marginTop: 16 },
-    infoText: { color: colors.lightGreen, fontWeight: '600', marginLeft: 8, fontSize: 13 },
+    infoBoxError: { backgroundColor: '#fff0f0', borderColor: colors.red },
+    infoBoxWarning: { backgroundColor: '#fff8e1', borderColor: '#f0a500' },
+    infoText: { fontWeight: '600', fontSize: 13 },
+    progressBar: { height: 6, backgroundColor: '#e0e0e0', borderRadius: 3, marginTop: 6, overflow: 'hidden' },
+    progressFill: { height: '100%', borderRadius: 3 },
     counter: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f5f5f5', borderRadius: 12, borderWidth: 1, borderColor: '#e0e0e0', overflow: 'hidden' },
     counterBtn: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
     counterBtnText: { fontSize: 22, fontWeight: 'bold', color: colors.blue },
@@ -266,6 +375,7 @@ const styles = StyleSheet.create({
     totalLabel: { fontSize: 15, color: colors.grey, fontWeight: '500' },
     totalAmount: { fontSize: 22, fontWeight: 'bold', color: colors.blue },
     cartButton: { backgroundColor: colors.red, borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20 },
+    cartButtonDisabled: { opacity: 0.5 },
     cartButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 10 },
     footer: { textAlign: 'center', fontSize: 11, color: colors.lightGrey, marginTop: 24 },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
@@ -277,7 +387,7 @@ const styles = StyleSheet.create({
     modalItemImage: { width: 56, height: 56, borderRadius: 10, marginRight: 12 },
     modalItemTitle: { fontSize: 15, fontWeight: '600', color: colors.black },
     modalItemSub: { fontSize: 12, color: colors.grey, marginTop: 2, marginBottom: 8 },
-    modalItemRow: { flexDirection: 'row', gap: 8 },
+    modalItemRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
     modalItemBadge: { fontSize: 12, fontWeight: '600', backgroundColor: '#f0f0f0', color: colors.grey, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
     separator: { height: 1, backgroundColor: '#f0f0f0', marginHorizontal: 16 },
 });
