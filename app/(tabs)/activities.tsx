@@ -4,6 +4,9 @@ import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView
 // Import des hooks de l'API
 import { useActivities, useActivityById, Activity } from '../api/activite/activitiesApi';
 
+// Styles globaux
+import { globalStyles, colors } from '../styles/globalStyles';
+
 // On s'assure que l'URL se termine par un slash pour coller au code de ta page réservation
 const IMAGE_BASE_URL = 'http://webngo.sio.bts:8002/';
 
