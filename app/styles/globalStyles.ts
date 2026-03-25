@@ -276,6 +276,18 @@ export const globalStyles = StyleSheet.create({
     actModalRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
     actBadge: { backgroundColor: colors.cardBackground, paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
     actModalDescription: { fontSize: 15, color: colors.grey, lineHeight: 22 },
+
+    // --- FILTRES (Page Activités) ---
+    actFilterToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.cardBackground, padding: 15, borderRadius: 12, marginBottom: 15 },
+    actFilterToggleText: { fontWeight: 'bold', color: colors.blue },
+    actFilterContainer: { backgroundColor: colors.bgLight, padding: 15, borderRadius: 12, marginBottom: 15, borderWidth: 1, borderColor: colors.borderColor },
+    actFilterLabel: { fontSize: 13, fontWeight: 'bold', color: colors.grey, marginBottom: 8, marginTop: 10 },
+    actFilterInput: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.borderColor, borderRadius: 10, padding: 12, fontSize: 14 },
+    actFilterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+    actFilterChip: { backgroundColor: colors.white, borderWidth: 1, borderColor: colors.borderColor, paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
+    actFilterChipSelected: { backgroundColor: colors.blue, borderColor: colors.blue },
+    actFilterChipText: { color: colors.grey, fontWeight: '600', fontSize: 13 },
+    actFilterChipTextSelected: { color: colors.white, fontWeight: '600', fontSize: 13 },
 });
 
 
