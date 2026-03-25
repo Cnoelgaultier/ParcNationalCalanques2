@@ -30,6 +30,18 @@ export default function TabLayout() {
                     tabBarIcon: ({ color }) => <IconSymbol size={28} name="calendar.fill" color={color} />,
                 }}
             />
+            <Tabs.Screen
+                name="register"
+                options={{
+                    title: "S'inscrire",
+                }}
+            />
+            <Tabs.Screen
+                name="login"
+                options={{
+                    title: "Se connecter",
+                }}
+            />
         </Tabs>
     );
 }
