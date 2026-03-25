@@ -288,6 +288,10 @@ export const globalStyles = StyleSheet.create({
     actFilterChipSelected: { backgroundColor: colors.blue, borderColor: colors.blue },
     actFilterChipText: { color: colors.grey, fontWeight: '600', fontSize: 13 },
     actFilterChipTextSelected: { color: colors.white, fontWeight: '600', fontSize: 13 },
+
+    // --- TYPES D'ACTIVITÉS ---
+    actTypesScroll: { flexGrow: 0, marginBottom: 15 },
+    actTypesContainer: { paddingHorizontal: 20, gap: 10, paddingBottom: 5 },
 });
 
 
