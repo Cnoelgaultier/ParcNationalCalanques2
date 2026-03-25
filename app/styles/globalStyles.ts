@@ -1,17 +1,20 @@
 import { StyleSheet } from 'react-native';
 
 export const colors = {
-    red: '#e51a2e',
-    black: '#000000',
-    lightGrey: '#bbbbbb',
-    grey: '#555555',
-    blue: '#4472c4',
-    lightGreen: '#a8d08d',
+    red: '#e51a2e',        // Calanques Red
+    black: '#000000',      // Calanques Black
+    lightGrey: '#bbbbbb',  // Calanques Light Grey
+    grey: '#555555',       // Calanques Grey
+    blue: '#4472c4',       // Calanques Blue
+    lightGreen: '#a8d08d', // Calanques Light Green
+
+    // Couleurs utiles pour l'interface
     white: '#ffffff',
     bgLight: '#fafafa',
     cardBackground: '#f5f7ff',
     borderColor: '#e0e0e0',
     errorBackground: '#fff0f0',
+    warningBackground: '#fff8e1',
 };
 
 export const globalStyles = StyleSheet.create({
@@ -197,4 +200,82 @@ export const globalStyles = StyleSheet.create({
     modalBody: {
         padding: 24,
     },
+
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.borderColor,
+    },
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: colors.black,
+        marginBottom: 15,
+    },
+
+
+    // ==========================================
+    // STYLES SPÉCIFIQUES : PAGE CREATE RÉSERVATION
+    // ==========================================
+    resInput: { borderWidth: 1, borderColor: colors.borderColor, borderRadius: 12, padding: 14, backgroundColor: colors.bgLight, fontSize: 15 },
+    resSelectButton: { borderWidth: 1, borderColor: colors.borderColor, borderRadius: 12, padding: 14, backgroundColor: colors.bgLight },
+    resSelectButtonContent: { flexDirection: 'row', alignItems: 'center' },
+    resSelectButtonImage: { width: 44, height: 44, borderRadius: 8, marginRight: 12 },
+    resSelectButtonTitle: { fontSize: 15, fontWeight: '600', color: colors.black },
+    resSelectButtonSub: { fontSize: 12, color: colors.grey, marginTop: 2 },
+    resSelectButtonPlaceholder: { flex: 1, fontSize: 15, color: colors.lightGrey },
+    resCardInfo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+    resInfoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#a8d08d20', borderWidth: 1, borderColor: colors.lightGreen, borderRadius: 12, padding: 14, marginTop: 16 },
+    resInfoBoxError: { backgroundColor: colors.errorBackground, borderColor: colors.red },
+    resInfoBoxWarning: { backgroundColor: colors.warningBackground, borderColor: '#f0a500' },
+    resInfoText: { fontWeight: '600', fontSize: 13 },
+    resProgressBar: { height: 6, backgroundColor: colors.borderColor, borderRadius: 3, marginTop: 6, overflow: 'hidden' },
+    resProgressFill: { height: '100%', borderRadius: 3 },
+    resCounter: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f5f5f5', borderRadius: 12, borderWidth: 1, borderColor: colors.borderColor, overflow: 'hidden' },
+    resCounterBtn: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
+    resCounterBtnText: { fontSize: 22, fontWeight: 'bold', color: colors.blue },
+    resCounterInput: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: 'bold', color: colors.black },
+    resTotalBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.cardBackground, borderRadius: 14, padding: 16, marginTop: 16 },
+    resTotalLabel: { fontSize: 15, color: colors.grey, fontWeight: '500' },
+    resTotalAmount: { fontSize: 22, fontWeight: 'bold', color: colors.blue },
+    resCartButtonDisabled: { opacity: 0.5 },
+
+    // Modal spécifique à la sélection dans réservation
+    resModalContainer: { backgroundColor: colors.white, borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%', paddingBottom: 30 },
+    resModalItem: { padding: 16, flexDirection: 'row', alignItems: 'center' },
+    resModalItemSelected: { backgroundColor: '#eef2fb' },
+    resModalItemImage: { width: 56, height: 56, borderRadius: 10, marginRight: 12 },
+    resModalItemTitle: { fontSize: 15, fontWeight: '600', color: colors.black },
+    resModalItemSub: { fontSize: 12, color: colors.grey, marginTop: 2, marginBottom: 8 },
+    resModalItemRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+    resModalItemBadge: { fontSize: 12, fontWeight: '600', backgroundColor: '#f0f0f0', color: colors.grey, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+    resSeparator: { height: 1, backgroundColor: '#f0f0f0', marginHorizontal: 16 },
+
+
+    // ==========================================
+    // STYLES SPÉCIFIQUES : INDEX
+    // ==========================================
+    idxContainer: { flex: 1, backgroundColor: colors.bgLight },
+    idxWelcomeCard: { backgroundColor: colors.white, borderRadius: 16, padding: 20, marginBottom: 24, alignItems: 'center', shadowColor: colors.black, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+    idxWelcomeTitle: { fontSize: 18, fontWeight: 'bold', color: colors.black, marginTop: 10, marginBottom: 8 },
+    idxWelcomeText: { fontSize: 14, color: colors.grey, textAlign: 'center', lineHeight: 20 },
+    idxActivityInfo: { flex: 1 },
+    idxActivityTitle: { fontSize: 15, fontWeight: '600', color: colors.black },
+    idxActivityDesc: { fontSize: 13, color: colors.grey, marginTop: 2 },
+
+    // ==========================================
+    // STYLES SPÉCIFIQUES : ACTIVITÉS
+    // ==========================================
+    actHeader: { marginBottom: 20, marginTop: 10 },
+    actListContainer: { gap: 16 },
+    actModalImage: { width: '100%', height: 250 },
+    actModalTitle: { fontSize: 24, fontWeight: 'bold', color: colors.black, marginBottom: 15 },
+    actModalRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+    actBadge: { backgroundColor: colors.cardBackground, paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
+    actModalDescription: { fontSize: 15, color: colors.grey, lineHeight: 22 },
 });
+
+
