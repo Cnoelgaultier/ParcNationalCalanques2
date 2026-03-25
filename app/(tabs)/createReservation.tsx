@@ -7,9 +7,10 @@ import {
 import { Stack } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import {
-    useActivites, useAvailability, useCreateReservation,
+    useActivites, useAvailability,
     formatDuree, formatDateForApi, Activite
 } from '../api/reservation/createReservationApi';
+import { useCart } from '../context/CartContext';
 
 const API_BASE_URL = 'http://webngo.sio.bts:8002/';
 
@@ -30,10 +31,13 @@ export default function CreateReservation() {
     const [modalVisible, setModalVisible] = useState(false);
 
     const { data: activites, isLoading, isError } = useActivites();
-    const { mutate: creerReservation, isPending } = useCreateReservation();
+    const { addToCart, isInCart } = useCart();
 
     const nb = Math.max(1, parseInt(nbParticipants || '1'));
     const dateApi = formatDateForApi(date); // YYYY-MM-DD pour l'API
+
+    // Clé unique pour ce créneau dans le panier
+    const cartKey = `${activiteSelectionnee?.id}-${dateApi}-${heure}`;
 
     // Fetch dispo uniquement si activité + date valide
     const {
@@ -45,12 +49,13 @@ export default function CreateReservation() {
     const placesDisponibles = availability?.disponible_jour ?? null;
     const quotaJour = availability?.quota_jour ?? null;
     const placesApres = placesDisponibles !== null ? placesDisponibles - nb : null;
+
     const peutReserver =
         placesApres !== null &&
         placesApres >= 0 &&
         date.trim() !== '' &&
         heure.trim() !== '' &&
-        !isPending;
+        !isInCart(cartKey);
 
     // Couleur de la jauge selon les places restantes
     const getDispoColor = () => {
@@ -60,31 +65,47 @@ export default function CreateReservation() {
         return colors.lightGreen;
     };
 
-    const handleAjouterAuPanier = () => {
+    const handleAjouterAuPanier = (): void => {
         if (!activiteSelectionnee) return;
+
         if (!date.trim() || !heure.trim()) {
             Alert.alert('Champs manquants', 'Veuillez renseigner une date et une heure.');
             return;
         }
+
         if (placesApres !== null && placesApres < 0) {
-            Alert.alert('Plus de places', `Il ne reste que ${placesDisponibles} place(s) pour cette date.`);
+            Alert.alert(
+                'Plus de places',
+                `Il ne reste que ${placesDisponibles} place(s) pour cette date.`
+            );
             return;
         }
 
-        creerReservation(
-            { activite_id: activiteSelectionnee.id, date: dateApi, heure, nb_participants: nb },
-            {
-                onSuccess: () => {
-                    Alert.alert('Succès', `"${activiteSelectionnee.nom}" ajouté au panier !`);
-                    setDate('');
-                    setHeure('');
-                    setNbParticipants('1');
-                },
-                onError: (error) => {
-                    Alert.alert('Erreur', error.message || 'Une erreur est survenue.');
-                },
-            }
-        );
+        if (isInCart(cartKey)) {
+            Alert.alert('Déjà ajouté', 'Ce créneau est déjà dans votre panier.');
+            return;
+        }
+
+        addToCart({
+            cartKey,
+            activite_id: activiteSelectionnee.id,
+            nom: activiteSelectionnee.nom,
+            description: activiteSelectionnee.description,
+            image_url: activiteSelectionnee.image_url,
+            tarif: activiteSelectionnee.tarif,
+            duree: activiteSelectionnee.duree,
+            date: dateApi,       // YYYY-MM-DD pour l'API
+            dateAffichee: date,  // JJ/MM/AAAA pour l'affichage
+            heure,
+            nb_participants: nb,
+        });
+
+        Alert.alert('✅ Ajouté', `"${activiteSelectionnee.nom}" ajouté au panier !`);
+
+        // Réinitialise le formulaire
+        setDate('');
+        setHeure('');
+        setNbParticipants('1');
     };
 
     return (
@@ -262,14 +283,10 @@ export default function CreateReservation() {
                             disabled={!peutReserver}
                             onPress={handleAjouterAuPanier}
                         >
-                            {isPending ? (
-                                <ActivityIndicator size="small" color="white" />
-                            ) : (
-                                <>
-                                    <Ionicons name="cart-outline" size={24} color="white" />
-                                    <Text style={styles.cartButtonText}>AJOUTER AU PANIER</Text>
-                                </>
-                            )}
+                            <Ionicons name="cart-outline" size={24} color="white" />
+                            <Text style={styles.cartButtonText}>
+                                {isInCart(cartKey) ? 'DÉJÀ DANS LE PANIER' : 'AJOUTER AU PANIER'}
+                            </Text>
                         </TouchableOpacity>
                     </>
                 )}
