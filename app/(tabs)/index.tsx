@@ -276,10 +276,10 @@ export default function ActivitiesScreen() {
                         )}
 
                         <TouchableOpacity
-                            style={globalStyles.primaryButton}
+                            style={globalStyles.secondaryButton}
                             onPress={() => setSelectedId(null)}
                         >
-                            <Text style={globalStyles.primaryButtonText}>FERMER</Text>
+                            <Text style={globalStyles.secondaryButtonText}>FERMER</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
