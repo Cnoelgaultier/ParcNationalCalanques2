@@ -9,18 +9,20 @@ import { useTypeActivites, TypeActivite } from '../api/typeActivite/typeActiviti
 
 // Import des styles globaux et des couleurs
 import { globalStyles, colors } from '../styles/globalStyles';
-import {Link} from "expo-router";
+// IMPORT DE useRouter pour la navigation depuis la modal
+import { Link, useRouter } from "expo-router";
 
 const IMAGE_BASE_URL = 'http://webngo.sio.bts:8002/';
 
 export default function ActivitiesScreen() {
     const { data: activities, isLoading: listLoading, isError: listError } = useActivities();
-
-    // Utilisation de ton nouveau hook !
     const { data: types, isLoading: typesLoading } = useTypeActivites();
 
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const { data: detailData, isLoading: detailLoading, isError: detailError } = useActivityById(selectedId);
+
+    // Initialisation du routeur
+    const router = useRouter();
 
     // --- ÉTATS POUR LES FILTRES ---
     const [showFilters, setShowFilters] = useState(false);
@@ -32,46 +34,30 @@ export default function ActivitiesScreen() {
     // --- LOGIQUE DE FILTRAGE ---
     const filteredActivities = activities?.filter(item => {
         let isValid = true;
-
-        // Filtre par Type
-        if (selectedType !== null && item.type_id !== selectedType) {
-            isValid = false;
-        }
-
-        // Filtre par Tarif Max
+        if (selectedType !== null && item.type_id !== selectedType) isValid = false;
         if (maxTarif.trim() !== '') {
             const tarifSaisi = parseFloat(maxTarif.replace(',', '.'));
-            if (item.tarif > tarifSaisi) {
-                isValid = false;
-            }
+            if (item.tarif > tarifSaisi) isValid = false;
         }
-
-        // Filtre par Durée Max
-        if (maxDuree.length === 8 && item.duree > maxDuree) {
-            isValid = false;
-        }
-
-        // Filtre par Durée Min
-        if (minDuree.length === 8 && item.duree < minDuree) {
-            isValid = false;
-        }
-
+        if (maxDuree.length === 8 && item.duree > maxDuree) isValid = false;
+        if (minDuree.length === 8 && item.duree < minDuree) isValid = false;
         return isValid;
     });
 
-    // --- Format Masque durée ---
     const formatTimeMask = (value: string) => {
         const numbers = value.replace(/\D/g, '');
-
         let formatted = numbers;
-        if (numbers.length > 2) {
-            formatted = `${numbers.slice(0, 2)}:${numbers.slice(2)}`;
-        }
-        if (numbers.length > 4) {
-            formatted = `${numbers.slice(0, 2)}:${numbers.slice(2, 4)}:${numbers.slice(4, 6)}`;
-        }
-
+        if (numbers.length > 2) formatted = `${numbers.slice(0, 2)}:${numbers.slice(2)}`;
+        if (numbers.length > 4) formatted = `${numbers.slice(0, 2)}:${numbers.slice(2, 4)}:${numbers.slice(4, 6)}`;
         return formatted;
+    };
+
+    // --- FONCTION DE REDIRECTION DEPUIS LA MODAL ---
+    const handleReserveActivity = () => {
+        // On ferme la modal
+        setSelectedId(null);
+        // On redirige vers la page de réservation
+        router.push({ pathname: "/createReservation", params: { activite_id: selectedId } });
     };
 
     return (
@@ -83,7 +69,6 @@ export default function ActivitiesScreen() {
                     <Text style={[globalStyles.pageTitle, { marginBottom: 10, marginTop: 0 }]}>Nos Activités</Text>
                 </View>
 
-
                 {typesLoading ? (
                     <ActivityIndicator size="small" color={colors.blue} style={{ marginBottom: 15 }} />
                 ) : (
@@ -93,7 +78,6 @@ export default function ActivitiesScreen() {
                         style={globalStyles.actTypesScroll}
                         contentContainerStyle={globalStyles.actTypesContainer}
                     >
-                        {/* Bouton "Toutes" */}
                         <TouchableOpacity
                             style={[globalStyles.actFilterChip, selectedType === null && globalStyles.actFilterChipSelected]}
                             onPress={() => setSelectedType(null)}
@@ -103,7 +87,6 @@ export default function ActivitiesScreen() {
                             </Text>
                         </TouchableOpacity>
 
-                        {/* Utilisation de l'interface TypeActivite  */}
                         {types?.map((type: TypeActivite) => (
                             <TouchableOpacity
                                 key={type.id}
@@ -128,7 +111,6 @@ export default function ActivitiesScreen() {
             {/* --- CONTENU PRINCIPAL --- */}
             <ScrollView contentContainerStyle={[globalStyles.scrollContent, { paddingTop: 0 }]}>
 
-                {/* --- BOUTON POUR AFFICHER/MASQUER LES FILTRES --- */}
                 <TouchableOpacity
                     style={globalStyles.actFilterToggle}
                     onPress={() => setShowFilters(!showFilters)}
@@ -140,10 +122,8 @@ export default function ActivitiesScreen() {
                     <Ionicons name={showFilters ? "chevron-up" : "chevron-down"} size={20} color={colors.blue} />
                 </TouchableOpacity>
 
-                {/* --- ZONE DE FILTRES --- */}
                 {showFilters && (
                     <View style={globalStyles.actFilterContainer}>
-
                         <Text style={[globalStyles.actFilterLabel, { marginTop: 0 }]}>Budget Maximum (€)</Text>
                         <TextInput
                             style={globalStyles.actFilterInput}
@@ -187,7 +167,6 @@ export default function ActivitiesScreen() {
                     </View>
                 )}
 
-                {/* Affichage des activités filtrées */}
                 <View style={globalStyles.actListContainer}>
                     {filteredActivities?.length === 0 && !listLoading && (
                         <Text style={{ textAlign: 'center', color: colors.grey, marginTop: 20 }}>
@@ -221,7 +200,6 @@ export default function ActivitiesScreen() {
                 </View>
             </ScrollView>
 
-            {/* FOOTER createReservation redirect */}
             <View style={globalStyles.footer}>
                 <Link href="/createReservation" asChild>
                     <TouchableOpacity style={globalStyles.secondaryButton}>
@@ -229,7 +207,6 @@ export default function ActivitiesScreen() {
                     </TouchableOpacity>
                 </Link>
             </View>
-
 
             {/* MODAL */}
             <Modal
@@ -275,12 +252,25 @@ export default function ActivitiesScreen() {
                             </ScrollView>
                         )}
 
-                        <TouchableOpacity
-                            style={globalStyles.secondaryButton}
-                            onPress={() => setSelectedId(null)}
-                        >
-                            <Text style={globalStyles.secondaryButtonText}>FERMER</Text>
-                        </TouchableOpacity>
+                        {/* --- ZONE DES BOUTONS DE LA MODAL --- */}
+                        <View style={{ gap: 10, marginTop: 10 }}>
+                            {/* Bouton pour aller réserver cette activité */}
+                            <TouchableOpacity
+                                style={globalStyles.primaryButton}
+                                onPress={handleReserveActivity}
+                            >
+                                <Text style={globalStyles.primaryButtonText}>RÉSERVER CETTE ACTIVITÉ</Text>
+                            </TouchableOpacity>
+
+                            {/* Bouton pour fermer la modal */}
+                            <TouchableOpacity
+                                style={globalStyles.secondaryButton}
+                                onPress={() => setSelectedId(null)}
+                            >
+                                <Text style={globalStyles.secondaryButtonText}>FERMER</Text>
+                            </TouchableOpacity>
+                        </View>
+
                     </View>
                 </View>
             </Modal>
