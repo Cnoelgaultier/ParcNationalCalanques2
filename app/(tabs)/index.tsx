@@ -9,6 +9,7 @@ import { useTypeActivites, TypeActivite } from '../api/typeActivite/typeActiviti
 
 // Import des styles globaux et des couleurs
 import { globalStyles, colors } from '../styles/globalStyles';
+import {Link} from "expo-router";
 
 const IMAGE_BASE_URL = 'http://webngo.sio.bts:8002/';
 
@@ -81,6 +82,7 @@ export default function ActivitiesScreen() {
                 <View style={[globalStyles.actHeader, { paddingHorizontal: 20 }]}>
                     <Text style={[globalStyles.pageTitle, { marginBottom: 10, marginTop: 0 }]}>Nos Activités</Text>
                 </View>
+
 
                 {typesLoading ? (
                     <ActivityIndicator size="small" color={colors.blue} style={{ marginBottom: 15 }} />
@@ -218,6 +220,16 @@ export default function ActivitiesScreen() {
                     ))}
                 </View>
             </ScrollView>
+
+            {/* FOOTER createReservation redirect */}
+            <View style={globalStyles.footer}>
+                <Link href="/createReservation" asChild>
+                    <TouchableOpacity style={globalStyles.secondaryButton}>
+                        <Text style={globalStyles.secondaryButtonText}>Faire une réservation</Text>
+                    </TouchableOpacity>
+                </Link>
+            </View>
+
 
             {/* MODAL */}
             <Modal

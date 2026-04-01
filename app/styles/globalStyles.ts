@@ -81,7 +81,7 @@ export const globalStyles = StyleSheet.create({
         marginTop: 24,
     },
 
-    // --- BOUTON PRINCIPAL (Sert pour Réserver, Panier, et Fermer Modal) ---
+    // --- BOUTON PRINCIPAL (Panier) ---
     primaryButton: {
         backgroundColor: colors.red, //
         borderRadius: 16,
@@ -95,8 +95,30 @@ export const globalStyles = StyleSheet.create({
         color: colors.white,
         fontWeight: 'bold',
         fontSize: 16,
-        marginLeft: 10, // Utile s'il y a une icône à côté
+        marginLeft: 10,
     },
+
+    // --- SECONDARY BUTTON (Plus petite taille, faire une réservation) ---
+    secondaryButton: {
+        backgroundColor: colors.red,
+        borderRadius: 20,
+        padding: 18,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 10,
+        marginBottom: 10,
+        marginLeft: 20,
+        marginRight: 20,
+
+    },
+    secondaryButtonText: {
+        color: colors.white,
+        fontWeight: 'bold',
+        fontSize: 14,
+        marginRight: 10,
+    },
+
+
 
     // --- GRANDES CARTES (ex: Page activities) ---
     card: {
