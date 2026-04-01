@@ -1,50 +1,85 @@
-# Welcome to your Expo app 👋
+📱  Réservation d'Activités
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Cette application mobile développée en React Native (Expo) permet aux utilisateurs de consulter un catalogue d'activités de loisirs (Nautiques, Terrestres, etc.), de filtrer les résultats, de gérer un panier et d'effectuer des réservations.
 
-## Get started
+🛠️ Technologies utilisées
 
-1. Install dependencies
+Framework : React Native avec Expo
 
-   ```bash
-   npm install
-   ```
+Navigation : Expo Router (Navigation par onglets / Tabs)
 
-2. Start the app
+Gestion d'état (State Management) : Context API (AuthContext pour l'authentification, CartContext pour le panier)
 
-   ```bash
-   npx expo start
-   ```
+Icônes : Phosphor Icons / Expo Vector Icons (Ionicons)
 
-In the output, you'll find options to open the app in a
+Backend / API : Serveur Laravel PHP local (http://webngo.sio.bts:8002/)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+🚀 Installation et lancement
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+Prérequis
 
-## Get a fresh project
+Avoir Node.js installé.
 
-When you're ready, run:
+Avoir l'application Expo Go sur son smartphone (ou un émulateur iOS/Android configuré).
 
-```bash
-npm run reset-project
-```
+Avoir le serveur backend allumé sur le port 8002.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Étapes
 
-## Learn more
+Cloner le dépôt et se placer dans le dossier du projet.
 
-To learn more about developing your project with Expo, look at the following resources:
+Installer les dépendances :
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+npm install
 
-## Join the community
 
-Join our community of developers creating universal apps.
+Lancer le serveur de développement Expo :
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+npx expo start
+
+
+Scanner le QR Code affiché dans le terminal avec l'application Expo Go (Android) ou l'appareil photo (iOS).
+
+📋 État du projet (To-Do List)
+
+✅ Ce qui est fait
+
+[x] Catalogue d'activités (activities.tsx) : - Récupération et affichage dynamique des activités depuis l'API.
+
+Carrousel des types d'activités (API).
+
+Filtres fonctionnels (Prix max, Durée max, Durée min).
+
+Modal de détails avec bouton de redirection vers la réservation.
+
+[x] Système de Réservation (createReservation.tsx) :
+
+Formulaire de sélection (Date, Heure, Participants).
+
+Vérification des quotas et disponibilités en temps réel.
+
+Calcul dynamique du prix total.
+
+Auto-sélection de l'activité si redirigé depuis le catalogue.
+
+[x] Gestion du Panier (cart.tsx) :
+
+Ajout de créneaux au panier (via CartContext).
+
+Affichage de la liste des items, du prix total et suppression des items.
+
+[x] Authentification (login.tsx & signup.tsx) :
+
+Formulaires de connexion et d'inscription avec validation des champs.
+
+Intégration du contexte global (AuthContext).
+
+[x] Design System (globalStyles.ts) : Centralisation des couleurs (Calanques Blue, Red, etc.) et des styles pour une UI cohérente.
+
+🚧 Ce qui reste à faire
+
+
+
+[ ] Gestion des Quotas
+
+[ ] Gestion des roles (Admin, User)
