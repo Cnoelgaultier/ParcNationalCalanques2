@@ -1,5 +1,10 @@
 const API_BASE_URL = 'http://webngo.sio.bts:8002/api';
 
+// Page d'authentification
+
+
+
+
 // Types
 export interface User {
     id: number;
