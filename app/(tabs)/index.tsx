@@ -1,8 +1,8 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image } from 'react-native';
-import { Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useActivites, formatDuree, Activite } from '../api/reservation/createReservationApi';
+import { Link, router } from 'expo-router';
+import React from 'react';
+import { Button, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 
 
 const colors = {
@@ -15,17 +15,23 @@ const colors = {
 };
 
 export default function HomeScreen() {
+  const { user, logout } = useAuth();
+
   return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Parc National{'\n'}des Calanques</Text>
           <Text style={styles.headerSubtitle}>Marseille · Cassis · La Ciotat</Text>
+          <Button title="Se déconnecter" onPress={() => {
+            logout();
+            router.replace('/login');
+          }} />
         </View>
 
         <View style={styles.card}>
           <Ionicons name="leaf-outline" size={32} color={colors.blue} />
-          <Text style={styles.cardTitle}>Bienvenue</Text>
+          <Text style={styles.cardTitle}>Bienvenue {user?.prenom}</Text>
           <Text style={styles.cardText}>
             Explorez les plus belles calanques de la Méditerranée. Réservez vos activités directement depuis l'application.
           </Text>
