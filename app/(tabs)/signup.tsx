@@ -14,7 +14,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
-import { User, registerUser } from '../api/auth/authApi';
+import { RegisterForm, registerUser } from '../api/auth/authApi';
 import { useAuth } from '../context/AuthContext';
 
 // Adapt this import to your navigation setup (React Navigation, Expo Router, etc.)
@@ -23,8 +23,6 @@ import { useAuth } from '../context/AuthContext';
 interface RegisterScreenProps {
   onNavigateToLogin?: () => void;
 }
-
-type RegisterForm = Omit<User, 'id'>;
 
 const INITIAL_FORM: RegisterForm = {
   email: '',
@@ -123,7 +121,7 @@ export default function RegisterScreen({ onNavigateToLogin }: RegisterScreenProp
 
     setLoading(true);
     try {
-      const user = await registerUser(form);
+      const user = await registerUser({ ...form, role_id: 1 });
       login(user);
       router.replace('/(tabs)');  // ← redirige vers l'accueil
     } catch (error) {
