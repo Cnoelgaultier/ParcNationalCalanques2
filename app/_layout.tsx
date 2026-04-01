@@ -1,18 +1,18 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import "../global.css";
-import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
 
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
-  return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClient}>
-        <Stack>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-      </QueryClientProvider>
-    </AuthProvider>
-  );
+    return (
+        <QueryClientProvider client={queryClient}>
+            <CartProvider>
+                <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                </Stack>
+            </CartProvider>
+        </QueryClientProvider>
+    );
 }
