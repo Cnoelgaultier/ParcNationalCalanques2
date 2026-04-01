@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView, Image, Modal, TextInput } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, ScrollView, Image, Modal, TextInput, Button } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Link, useRouter } from 'expo-router';
 
-// Import des hooks de l'API activité
+// Import des hooks de l'API activité (chemins adaptés pour le dossier (tabs))
 import { useActivities, useActivityById, Activity } from '../api/activite/activitiesApi';
-// Import du hook API des types d'activités
 import { useTypeActivites, TypeActivite } from '../api/typeActivite/typeActivitiesApi';
 
 // Import des styles globaux et des couleurs
 import { globalStyles, colors } from '../styles/globalStyles';
-// IMPORT DE useRouter pour la navigation depuis la modal
-import { Link, useRouter } from "expo-router";
+
+// Import du contexte Auth
+import { useAuth } from '../context/AuthContext';
 
 const IMAGE_BASE_URL = 'http://webngo.sio.bts:8002/';
 
 export default function ActivitiesScreen() {
+    const { user, logout } = useAuth();
     const { data: activities, isLoading: listLoading, isError: listError } = useActivities();
     const { data: types, isLoading: typesLoading } = useTypeActivites();
 
@@ -32,7 +34,7 @@ export default function ActivitiesScreen() {
     const [minDuree, setMinDuree] = useState<string>('');
 
     // --- LOGIQUE DE FILTRAGE ---
-    const filteredActivities = activities?.filter(item => {
+    const filteredActivities = activities?.filter((item: Activity) => {
         let isValid = true;
         if (selectedType !== null && item.type_id !== selectedType) isValid = false;
         if (maxTarif.trim() !== '') {
@@ -54,18 +56,23 @@ export default function ActivitiesScreen() {
 
     // --- FONCTION DE REDIRECTION DEPUIS LA MODAL ---
     const handleReserveActivity = () => {
-        // On ferme la modal
         setSelectedId(null);
-        // On redirige vers la page de réservation
         router.push({ pathname: "/createReservation", params: { activite_id: selectedId } });
     };
 
     return (
         <View style={globalStyles.container}>
 
+            <Button title="Se déconnecter" onPress={() => {
+                logout();
+                router.replace('/login');
+            }} />
+
             {/* --- EN-TÊTE ET CARROUSEL DES TYPES D'ACTIVITÉS --- */}
             <View style={{ paddingTop: 20 }}>
                 <View style={[globalStyles.actHeader, { paddingHorizontal: 20 }]}>
+                    {/* CORRECTION ICI : utilisation de globalStyles.cardTitle */}
+                    <Text style={globalStyles.cardTitle}>Bienvenue {user?.prenom}</Text>
                     <Text style={[globalStyles.pageTitle, { marginBottom: 10, marginTop: 0 }]}>Nos Activités</Text>
                 </View>
 
@@ -254,7 +261,6 @@ export default function ActivitiesScreen() {
 
                         {/* --- ZONE DES BOUTONS DE LA MODAL --- */}
                         <View style={{ gap: 10, marginTop: 10 }}>
-                            {/* Bouton pour aller réserver cette activité */}
                             <TouchableOpacity
                                 style={globalStyles.primaryButton}
                                 onPress={handleReserveActivity}
@@ -262,7 +268,6 @@ export default function ActivitiesScreen() {
                                 <Text style={globalStyles.primaryButtonText}>RÉSERVER CETTE ACTIVITÉ</Text>
                             </TouchableOpacity>
 
-                            {/* Bouton pour fermer la modal */}
                             <TouchableOpacity
                                 style={globalStyles.secondaryButton}
                                 onPress={() => setSelectedId(null)}
