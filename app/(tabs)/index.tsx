@@ -256,10 +256,10 @@ export default function ActivitiesScreen() {
                         <View style={{ gap: 10, marginTop: 10 }}>
                             {/* Bouton pour aller réserver cette activité */}
                             <TouchableOpacity
-                                style={globalStyles.primaryButton}
+                                style={globalStyles.reserveActivityButton}
                                 onPress={handleReserveActivity}
                             >
-                                <Text style={globalStyles.primaryButtonText}>RÉSERVER CETTE ACTIVITÉ</Text>
+                                <Text style={globalStyles.reserveActivityButtonText}>RÉSERVER CETTE ACTIVITÉ</Text>
                             </TouchableOpacity>
 
                             {/* Bouton pour fermer la modal */}
