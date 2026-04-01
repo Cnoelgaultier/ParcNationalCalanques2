@@ -1,51 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, TextInput, TouchableOpacity,
     ScrollView, KeyboardAvoidingView, Platform,
-    StyleSheet, ActivityIndicator, Modal, FlatList, Image, Alert
+    ActivityIndicator, Modal, FlatList, Image, Alert
 } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import {
     useActivites, useAvailability,
     formatDuree, formatDateForApi, Activite
 } from '../api/reservation/createReservationApi';
 import { useCart } from '../context/CartContext';
 
+// Import des styles globaux et des couleurs
+import { globalStyles, colors } from '../styles/globalStyles';
+
 const API_BASE_URL = 'http://webngo.sio.bts:8002/';
 
-const colors = {
-    red: '#e51a2e',
-    blue: '#4472c4',
-    black: '#000000',
-    grey: '#555555',
-    lightGreen: '#a8d08d',
-    lightGrey: '#bbbbbb',
-};
-
-// Liste de tes créneaux horaires disponibles
-const CRENEAUX_HORAIRES = ['09:00', '10:30', '11:00', '14:00', '15:30', '16:00', '17:30'];
-
 export default function CreateReservation() {
-    // États pour la date et l'heure
     const [date, setDate] = useState(''); // format JJ/MM/AAAA affiché
-    const [dateObj, setDateObj] = useState(new Date());
-    const [showDatePicker, setShowDatePicker] = useState(false);
-
-    const [heure, setHeure] = useState('');
     const [nbParticipants, setNbParticipants] = useState('1');
+    const [heure, setHeure] = useState('');
     const [activiteSelectionnee, setActiviteSelectionnee] = useState<Activite | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
 
     const { data: activites, isLoading, isError } = useActivites();
     const { addToCart, isInCart } = useCart();
 
-    const nb = Math.max(1, parseInt(nbParticipants || '1'));
-    const dateApi = formatDateForApi(date);
+    // --- LECTURE DU PARAMÈTRE D'URL ---
+    const params = useLocalSearchParams();
+    const activiteIdDepuisParam = params.activite_id ? Number(params.activite_id) : null;
 
+    // --- AUTO-SÉLECTION DE L'ACTIVITÉ ---
+    useEffect(() => {
+        if (activiteIdDepuisParam && activites && activites.length > 0) {
+            const activiteTrouvee = activites.find(a => a.id === activiteIdDepuisParam);
+
+            if (activiteTrouvee && activiteSelectionnee?.id !== activiteTrouvee.id) {
+                setActiviteSelectionnee(activiteTrouvee);
+            }
+        }
+    }, [activiteIdDepuisParam, activites]); // S'exécute à l'arrivée sur la page ou à la fin du chargement API
+
+    const nb = Math.max(1, parseInt(nbParticipants || '1'));
+    const dateApi = formatDateForApi(date); // YYYY-MM-DD pour l'API
+
+    // Clé unique pour ce créneau dans le panier
     const cartKey = `${activiteSelectionnee?.id}-${dateApi}-${heure}`;
 
+    // Fetch dispo uniquement si activité + date valide
     const {
         data: availability,
         isLoading: isLoadingDispo,
@@ -68,22 +71,6 @@ export default function CreateReservation() {
         if (placesApres < 0) return colors.red;
         if (placesApres < 5) return '#f0a500';
         return colors.lightGreen;
-    };
-
-    // Gestionnaire du calendrier natif
-    const onDateChange = (event: any, selectedDate?: Date) => {
-        if (Platform.OS === 'android') {
-            setShowDatePicker(false);
-        }
-
-        if (selectedDate) {
-            setDateObj(selectedDate);
-            const day = String(selectedDate.getDate()).padStart(2, '0');
-            const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-            const year = selectedDate.getFullYear();
-
-            setDate(`${day}/${month}/${year}`);
-        }
     };
 
     const handleAjouterAuPanier = (): void => {
@@ -129,133 +116,131 @@ export default function CreateReservation() {
     };
 
     return (
-        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+        <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={globalStyles.container}
+        >
             <Stack.Screen options={{
                 title: "Nouvelle réservation",
                 headerTintColor: colors.blue,
                 headerTitleStyle: { fontWeight: 'bold' }
             }} />
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <Text style={styles.label}>Choisir une activité</Text>
-                <TouchableOpacity style={styles.selectButton} onPress={() => setModalVisible(true)} activeOpacity={0.8}>
+            <ScrollView contentContainerStyle={globalStyles.scrollContent}>
+                <Text style={globalStyles.label}>Choisir une activité</Text>
+                <TouchableOpacity
+                    style={globalStyles.resSelectButton}
+                    onPress={() => setModalVisible(true)}
+                    activeOpacity={0.8}
+                >
                     {isLoading ? (
                         <ActivityIndicator size="small" color={colors.blue} />
                     ) : activiteSelectionnee ? (
-                        <View style={styles.selectButtonContent}>
-                            <Image source={{ uri: `${API_BASE_URL}${activiteSelectionnee.image_url}` }} style={styles.selectButtonImage} />
+                        <View style={globalStyles.resSelectButtonContent}>
+                            <Image
+                                source={{ uri: `${API_BASE_URL}${activiteSelectionnee.image_url}` }}
+                                style={globalStyles.resSelectButtonImage}
+                            />
                             <View style={{ flex: 1 }}>
-                                <Text style={styles.selectButtonTitle}>{activiteSelectionnee.nom}</Text>
-                                <Text style={styles.selectButtonSub}>{formatDuree(activiteSelectionnee.duree)} · {activiteSelectionnee.tarif} €</Text>
+                                <Text style={globalStyles.resSelectButtonTitle}>{activiteSelectionnee.nom}</Text>
+                                <Text style={globalStyles.resSelectButtonSub}>
+                                    {formatDuree(activiteSelectionnee.duree)} · {activiteSelectionnee.tarif} €
+                                </Text>
                             </View>
                             <Ionicons name="chevron-down" size={18} color={colors.lightGrey} />
                         </View>
                     ) : (
-                        <View style={styles.selectButtonContent}>
-                            <Text style={styles.selectButtonPlaceholder}>Sélectionner une activité...</Text>
+                        <View style={globalStyles.resSelectButtonContent}>
+                            <Text style={globalStyles.resSelectButtonPlaceholder}>Sélectionner une activité...</Text>
                             <Ionicons name="chevron-down" size={18} color={colors.lightGrey} />
                         </View>
                     )}
                 </TouchableOpacity>
 
                 {isError && (
-                    <View style={styles.errorBox}>
+                    <View style={globalStyles.errorBox}>
                         <Ionicons name="alert-circle-outline" size={18} color={colors.red} />
-                        <Text style={styles.errorText}>Impossible de charger les activités</Text>
+                        <Text style={globalStyles.errorText}>Impossible de charger les activités</Text>
                     </View>
                 )}
 
                 {activiteSelectionnee && (
                     <>
-                        {/* Date */}
-                        <Text style={styles.label}>Sélectionner une date</Text>
-
-                        {Platform.OS === 'web' ? (
-                            /* Fallback spécifique pour le Web (utilise le calendrier du navigateur) */
-                            <input
-                                type="date"
-                                value={dateApi}
-                                min={new Date().toISOString().split('T')[0]} // Empêche de réserver dans le passé
-                                onChange={(e: any) => {
-                                    const val = e.target.value; // Format retourné : YYYY-MM-DD
-                                    if (val) {
-                                        const [year, month, day] = val.split('-');
-                                        setDate(`${day}/${month}/${year}`); // Affichage en JJ/MM/AAAA
-                                        setDateObj(new Date(Number(year), Number(month) - 1, Number(day)));
-                                    } else {
-                                        setDate('');
-                                    }
-                                }}
-                                style={{
-                                    width: '100%',
-                                    padding: '14px',
-                                    borderRadius: '12px',
-                                    border: '1px solid #e0e0e0',
-                                    backgroundColor: '#fafafa',
-                                    fontSize: '15px',
-                                    outline: 'none',
-                                    fontFamily: 'inherit',
-                                    color: colors.black,
-                                    boxSizing: 'border-box'
-                                }}
+                        {/* Card activité */}
+                        <View style={globalStyles.card}>
+                            <Image
+                                source={{ uri: `${API_BASE_URL}${activiteSelectionnee.image_url}` }}
+                                style={globalStyles.cardImage}
+                                resizeMode="cover"
                             />
-                        ) : Platform.OS === 'ios' ? (
-                            /* Version iOS native */
-                            <View style={styles.iosPickerContainer}>
-                                <DateTimePicker
-                                    value={dateObj}
-                                    mode="date"
-                                    display="default"
-                                    onChange={onDateChange}
-                                    minimumDate={new Date()}
-                                />
+                            <View style={globalStyles.cardBody}>
+                                <Text style={globalStyles.cardTitle}>{activiteSelectionnee.nom}</Text>
+                                <Text style={globalStyles.cardDesc}>{activiteSelectionnee.description}</Text>
+                                <View style={globalStyles.cardRow}>
+                                    <View style={globalStyles.resCardInfo}>
+                                        <Ionicons name="time-outline" size={18} color={colors.blue} />
+                                        <Text style={globalStyles.infoTextBlue}>{formatDuree(activiteSelectionnee.duree)}</Text>
+                                    </View>
+                                    <View style={globalStyles.resCardInfo}>
+                                        <MaterialIcons name="euro" size={18} color={colors.blue} />
+                                        <Text style={globalStyles.priceTextRed}>{activiteSelectionnee.tarif} €</Text>
+                                    </View>
+                                </View>
                             </View>
-                        ) : (
-                            /* Version Android native */
-                            <>
-                                <TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)} activeOpacity={0.7}>
-                                    <Text style={[styles.dateButtonText, !date && { color: colors.lightGrey }]}>
-                                        {date || "Choisir dans le calendrier..."}
-                                    </Text>
-                                    <Ionicons name="calendar-outline" size={20} color={colors.grey} />
-                                </TouchableOpacity>
-                                {showDatePicker && (
-                                    <DateTimePicker
-                                        value={dateObj}
-                                        mode="date"
-                                        display="default"
-                                        onChange={onDateChange}
-                                        minimumDate={new Date()}
-                                    />
-                                )}
-                            </>
-                        )}
+                        </View>
 
-                        {/* Jauge disponibilité */}
+                        {/* Date */}
+                        <Text style={globalStyles.label}>Sélectionner une date</Text>
+                        <TextInput
+                            placeholder="JJ/MM/AAAA"
+                            value={date}
+                            onChangeText={setDate}
+                            style={globalStyles.resInput}
+                            keyboardType="numeric"
+                        />
+
+                        {/* Heure */}
+                        <Text style={globalStyles.label}>Sélectionner une heure</Text>
+                        <TextInput
+                            placeholder="Ex: 14:00"
+                            value={heure}
+                            onChangeText={setHeure}
+                            style={globalStyles.resInput}
+                        />
+
+                        {/* Jauge disponibilité — s'affiche seulement si date valide */}
                         {dateApi !== '' && (
                             <View style={[
-                                styles.infoBox,
-                                placesApres !== null && placesApres < 0 && styles.infoBoxError,
-                                placesApres !== null && placesApres >= 0 && placesApres < 5 && styles.infoBoxWarning,
+                                globalStyles.resInfoBox,
+                                placesApres !== null && placesApres < 0 && globalStyles.resInfoBoxError,
+                                placesApres !== null && placesApres >= 0 && placesApres < 5 && globalStyles.resInfoBoxWarning,
                             ]}>
                                 {isLoadingDispo || isFetchingDispo ? (
                                     <ActivityIndicator size="small" color={colors.blue} />
                                 ) : (
                                     <>
-                                        <Ionicons name="information-circle-outline" size={20} color={getDispoColor()} />
+                                        <Ionicons
+                                            name="information-circle-outline"
+                                            size={20}
+                                            color={getDispoColor()}
+                                        />
                                         <View style={{ flex: 1, marginLeft: 8 }}>
-                                            <Text style={[styles.infoText, { color: getDispoColor() }]}>
+                                            <Text style={[globalStyles.resInfoText, { color: getDispoColor() }]}>
                                                 {placesDisponibles === null
                                                     ? 'Entrez une date valide'
                                                     : placesApres! < 0
                                                         ? `Pas assez de places — ${placesDisponibles} disponible(s)`
                                                         : `${placesApres} place(s) restante(s) après réservation`}
                                             </Text>
+                                            {/* Barre de progression */}
                                             {placesDisponibles !== null && quotaJour !== null && (
-                                                <View style={styles.progressBar}>
+                                                <View style={globalStyles.resProgressBar}>
                                                     <View style={[
-                                                        styles.progressFill,
-                                                        { width: `${Math.min(100, (placesDisponibles / quotaJour) * 100)}%`, backgroundColor: getDispoColor() }
+                                                        globalStyles.resProgressFill,
+                                                        {
+                                                            width: `${Math.min(100, (placesDisponibles / quotaJour) * 100)}%`,
+                                                            backgroundColor: getDispoColor(),
+                                                        }
                                                     ]} />
                                                 </View>
                                             )}
@@ -265,68 +250,66 @@ export default function CreateReservation() {
                             </View>
                         )}
 
-                        {/* Heure (Créneaux sous forme de bulles) */}
-                        <Text style={styles.label}>Sélectionner un créneau</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeContainer}>
-                            {CRENEAUX_HORAIRES.map((creneau) => (
-                                <TouchableOpacity
-                                    key={creneau}
-                                    activeOpacity={0.7}
-                                    style={[styles.timeBadge, heure === creneau && styles.timeBadgeSelected]}
-                                    onPress={() => setHeure(creneau)}
-                                >
-                                    <Text style={[styles.timeBadgeText, heure === creneau && styles.timeBadgeTextSelected]}>
-                                        {creneau}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-
                         {/* Participants */}
-                        <Text style={styles.label}>Nombre de participants</Text>
-                        <View style={styles.counter}>
-                            <TouchableOpacity onPress={() => setNbParticipants(Math.max(1, nb - 1).toString())} style={styles.counterBtn}>
-                                <Text style={styles.counterBtnText}>-</Text>
+                        <Text style={globalStyles.label}>Nombre de participants</Text>
+                        <View style={globalStyles.resCounter}>
+                            <TouchableOpacity
+                                onPress={() => setNbParticipants(Math.max(1, nb - 1).toString())}
+                                style={globalStyles.resCounterBtn}
+                            >
+                                <Text style={globalStyles.resCounterBtnText}>-</Text>
                             </TouchableOpacity>
                             <TextInput
                                 keyboardType="numeric"
                                 value={nbParticipants}
                                 onChangeText={(v) => setNbParticipants(v.replace(/[^0-9]/g, ''))}
-                                style={styles.counterInput}
+                                style={globalStyles.resCounterInput}
                             />
-                            <TouchableOpacity onPress={() => setNbParticipants((nb + 1).toString())} style={styles.counterBtn}>
-                                <Text style={styles.counterBtnText}>+</Text>
+                            <TouchableOpacity
+                                onPress={() => setNbParticipants((nb + 1).toString())}
+                                style={globalStyles.resCounterBtn}
+                            >
+                                <Text style={globalStyles.resCounterBtnText}>+</Text>
                             </TouchableOpacity>
                         </View>
 
                         {/* Total */}
-                        <View style={styles.totalBox}>
-                            <Text style={styles.totalLabel}>Total estimé</Text>
-                            <Text style={styles.totalAmount}>{(activiteSelectionnee.tarif * nb).toFixed(2)} €</Text>
+                        <View style={globalStyles.resTotalBox}>
+                            <Text style={globalStyles.resTotalLabel}>Total estimé</Text>
+                            <Text style={globalStyles.resTotalAmount}>
+                                {(activiteSelectionnee.tarif * nb).toFixed(2)} €
+                            </Text>
                         </View>
 
                         {/* Bouton */}
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            style={[styles.cartButton, !peutReserver && styles.cartButtonDisabled]}
+                            style={[globalStyles.primaryButton, !peutReserver && globalStyles.resCartButtonDisabled]}
                             disabled={!peutReserver}
                             onPress={handleAjouterAuPanier}
                         >
-                            <Ionicons name="cart-outline" size={24} color="white" />
-                            <Text style={styles.cartButtonText}>
+                            <Ionicons name="cart-outline" size={24} color={colors.white} />
+                            <Text style={globalStyles.primaryButtonText}>
                                 {isInCart(cartKey) ? 'DÉJÀ DANS LE PANIER' : 'AJOUTER AU PANIER'}
                             </Text>
                         </TouchableOpacity>
                     </>
                 )}
+
+                <Text style={globalStyles.footer}>Application Mobile · NGO · BTSSIO Jean Rostand</Text>
             </ScrollView>
 
-            {/* Modal de sélection d'activité inchangé */}
-            <Modal visible={modalVisible} animationType="slide" transparent={true} onRequestClose={() => setModalVisible(false)}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.modalContainer}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Choisir une activité</Text>
+            {/* Modal */}
+            <Modal
+                visible={modalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={globalStyles.modalOverlay}>
+                    <View style={globalStyles.resModalContainer}>
+                        <View style={globalStyles.modalHeader}>
+                            <Text style={globalStyles.modalTitle}>Choisir une activité</Text>
                             <TouchableOpacity onPress={() => setModalVisible(false)}>
                                 <Ionicons name="close" size={24} color={colors.black} />
                             </TouchableOpacity>
@@ -339,23 +322,37 @@ export default function CreateReservation() {
                                 keyExtractor={(item) => item.id.toString()}
                                 renderItem={({ item }) => (
                                     <TouchableOpacity
-                                        style={[styles.modalItem, activiteSelectionnee?.id === item.id && styles.modalItemSelected]}
+                                        style={[
+                                            globalStyles.resModalItem,
+                                            activiteSelectionnee?.id === item.id && globalStyles.resModalItemSelected
+                                        ]}
                                         onPress={() => {
                                             setActiviteSelectionnee(item);
                                             setNbParticipants('1');
                                             setModalVisible(false);
                                         }}
                                     >
-                                        <Image source={{ uri: `${API_BASE_URL}${item.image_url}` }} style={styles.modalItemImage} resizeMode="cover" />
+                                        <Image
+                                            source={{ uri: `${API_BASE_URL}${item.image_url}` }}
+                                            style={globalStyles.resModalItemImage}
+                                            resizeMode="cover"
+                                        />
                                         <View style={{ flex: 1 }}>
-                                            <Text style={styles.modalItemTitle}>{item.nom}</Text>
-                                            <Text style={styles.modalItemSub}>{item.description}</Text>
+                                            <Text style={globalStyles.resModalItemTitle}>{item.nom}</Text>
+                                            <Text style={globalStyles.resModalItemSub}>{item.description}</Text>
+                                            <View style={globalStyles.resModalItemRow}>
+                                                <Text style={globalStyles.resModalItemBadge}>{formatDuree(item.duree)}</Text>
+                                                <Text style={[globalStyles.resModalItemBadge, { backgroundColor: '#eef2fb', color: colors.blue }]}>
+                                                    {item.tarif} €
+                                                </Text>
+                                            </View>
                                         </View>
                                         {activiteSelectionnee?.id === item.id && (
                                             <Ionicons name="checkmark-circle" size={22} color={colors.blue} />
                                         )}
                                     </TouchableOpacity>
                                 )}
+                                ItemSeparatorComponent={() => <View style={globalStyles.resSeparator} />}
                             />
                         )}
                     </View>
@@ -365,55 +362,3 @@ export default function CreateReservation() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
-    scrollContent: { padding: 20, paddingBottom: 40 },
-    label: { fontSize: 14, fontWeight: '600', color: colors.grey, marginBottom: 8, marginTop: 16 },
-
-    // Nouveaux styles pour Date
-    iosPickerContainer: { alignSelf: 'flex-start', marginTop: 4, marginBottom: 8 },
-    dateButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12, padding: 14, backgroundColor: '#fafafa' },
-    dateButtonText: { fontSize: 15, color: colors.black },
-
-    // Nouveaux styles pour les créneaux
-    timeContainer: { marginTop: 4, paddingBottom: 8 },
-    timeBadge: { paddingVertical: 10, paddingHorizontal: 18, borderRadius: 20, borderWidth: 1, borderColor: '#e0e0e0', backgroundColor: '#fafafa', marginRight: 10 },
-    timeBadgeSelected: { backgroundColor: colors.blue, borderColor: colors.blue },
-    timeBadgeText: { fontSize: 15, color: colors.grey, fontWeight: '600' },
-    timeBadgeTextSelected: { color: '#fff' },
-
-    // Anciens styles conservés
-    selectButton: { borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 12, padding: 14, backgroundColor: '#fafafa' },
-    selectButtonContent: { flexDirection: 'row', alignItems: 'center' },
-    selectButtonImage: { width: 44, height: 44, borderRadius: 8, marginRight: 12 },
-    selectButtonTitle: { fontSize: 15, fontWeight: '600', color: colors.black },
-    selectButtonSub: { fontSize: 12, color: colors.grey, marginTop: 2 },
-    selectButtonPlaceholder: { flex: 1, fontSize: 15, color: colors.lightGrey },
-    errorBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff0f0', padding: 12, borderRadius: 10, marginTop: 8 },
-    errorText: { color: colors.red, marginLeft: 8, fontSize: 13 },
-    infoBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#a8d08d20', borderWidth: 1, borderColor: colors.lightGreen, borderRadius: 12, padding: 14, marginTop: 16 },
-    infoBoxError: { backgroundColor: '#fff0f0', borderColor: colors.red },
-    infoBoxWarning: { backgroundColor: '#fff8e1', borderColor: '#f0a500' },
-    infoText: { fontWeight: '600', fontSize: 13 },
-    progressBar: { height: 6, backgroundColor: '#e0e0e0', borderRadius: 3, marginTop: 6, overflow: 'hidden' },
-    progressFill: { height: '100%', borderRadius: 3 },
-    counter: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f5f5f5', borderRadius: 12, borderWidth: 1, borderColor: '#e0e0e0', overflow: 'hidden' },
-    counterBtn: { width: 50, height: 50, alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' },
-    counterBtnText: { fontSize: 22, fontWeight: 'bold', color: colors.blue },
-    counterInput: { flex: 1, textAlign: 'center', fontSize: 18, fontWeight: 'bold', color: colors.black },
-    totalBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#f0f4ff', borderRadius: 14, padding: 16, marginTop: 16 },
-    totalLabel: { fontSize: 15, color: colors.grey, fontWeight: '500' },
-    totalAmount: { fontSize: 22, fontWeight: 'bold', color: colors.blue },
-    cartButton: { backgroundColor: colors.red, borderRadius: 16, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20 },
-    cartButtonDisabled: { opacity: 0.5 },
-    cartButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16, marginLeft: 10 },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    modalContainer: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '80%', paddingBottom: 30 },
-    modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-    modalTitle: { fontSize: 18, fontWeight: 'bold', color: colors.black },
-    modalItem: { padding: 16, flexDirection: 'row', alignItems: 'center' },
-    modalItemSelected: { backgroundColor: '#eef2fb' },
-    modalItemImage: { width: 56, height: 56, borderRadius: 10, marginRight: 12 },
-    modalItemTitle: { fontSize: 15, fontWeight: '600', color: colors.black },
-    modalItemSub: { fontSize: 12, color: colors.grey, marginTop: 2, marginBottom: 8 },
-});

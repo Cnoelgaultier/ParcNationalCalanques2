@@ -81,44 +81,53 @@ export const globalStyles = StyleSheet.create({
         marginTop: 24,
     },
 
-    // --- BOUTON PRINCIPAL (Panier) ---
+    // --- BOUTON PRINCIPAL (Actions fortes / Finales : Panier) ---
     primaryButton: {
-        backgroundColor: colors.red, //
-        borderRadius: 16,
-        padding: 18,
+        backgroundColor: colors.red,
+        borderRadius: 14,
+        padding: 16,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 20,
+        // J'ai retiré les margin "en dur" pour que tes View (avec gap) gèrent l'espacement
     },
     primaryButtonText: {
         color: colors.white,
         fontWeight: 'bold',
         fontSize: 16,
-        marginLeft: 10,
     },
 
-    // --- SECONDARY BUTTON (Plus petite taille, faire une réservation) ---
-    secondaryButton: {
-        backgroundColor: colors.red,
-        borderRadius: 20,
-        padding: 18,
+    // --- BOUTON RÉSERVER (Action principale de la page Activités) ---
+    reserveActivityButton: {
+        backgroundColor: colors.blue,
+        borderRadius: 14,
+        padding: 16,
         flexDirection: 'row',
+        alignItems: 'center',
         justifyContent: 'center',
-        marginTop: 10,
-        marginBottom: 10,
-        marginLeft: 20,
-        marginRight: 20,
-
     },
-    secondaryButtonText: {
+    reserveActivityButtonText: {
         color: colors.white,
         fontWeight: 'bold',
-        fontSize: 14,
-        marginRight: 10,
+        fontSize: 16,
     },
 
-
+    // --- BOUTON SECONDAIRE (Actions neutres : Fermer, Annuler, Retour) ---
+    secondaryButton: {
+        backgroundColor: colors.bgLight,
+        borderWidth: 1,
+        borderColor: colors.borderColor,
+        borderRadius: 14,
+        padding: 16,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    secondaryButtonText: {
+        color: colors.grey,
+        fontWeight: 'bold',
+        fontSize: 15,
+    },
 
     // --- GRANDES CARTES (ex: Page activities) ---
     card: {
@@ -126,7 +135,7 @@ export const globalStyles = StyleSheet.create({
         borderRadius: 16,
         overflow: 'hidden',
         elevation: 3,
-        shadowColor: colors.black, // [cite: 17]
+        shadowColor: colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -142,11 +151,11 @@ export const globalStyles = StyleSheet.create({
     cardTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: colors.black, // [cite: 17]
+        color: colors.black,
     },
     cardDesc: {
         fontSize: 14,
-        color: colors.grey, // [cite: 20]
+        color: colors.grey,
         marginVertical: 8,
     },
     cardRow: {
@@ -164,7 +173,7 @@ export const globalStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         elevation: 1,
-        shadowColor: colors.black, // [cite: 17]
+        shadowColor: colors.black,
         shadowOpacity: 0.04,
         shadowRadius: 6,
     },
@@ -182,7 +191,7 @@ export const globalStyles = StyleSheet.create({
     infoTextBlue: {
         fontSize: 14,
         fontWeight: '600',
-        color: colors.blue, // [cite: 21]
+        color: colors.blue,
     },
     priceTextRed: {
         fontSize: 18,
@@ -276,20 +285,8 @@ export const globalStyles = StyleSheet.create({
     resModalItemBadge: { fontSize: 12, fontWeight: '600', backgroundColor: '#f0f0f0', color: colors.grey, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
     resSeparator: { height: 1, backgroundColor: '#f0f0f0', marginHorizontal: 16 },
 
-
     // ==========================================
-    // STYLES SPÉCIFIQUES : INDEX
-    // ==========================================
-    idxContainer: { flex: 1, backgroundColor: colors.bgLight },
-    idxWelcomeCard: { backgroundColor: colors.white, borderRadius: 16, padding: 20, marginBottom: 24, alignItems: 'center', shadowColor: colors.black, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-    idxWelcomeTitle: { fontSize: 18, fontWeight: 'bold', color: colors.black, marginTop: 10, marginBottom: 8 },
-    idxWelcomeText: { fontSize: 14, color: colors.grey, textAlign: 'center', lineHeight: 20 },
-    idxActivityInfo: { flex: 1 },
-    idxActivityTitle: { fontSize: 15, fontWeight: '600', color: colors.black },
-    idxActivityDesc: { fontSize: 13, color: colors.grey, marginTop: 2 },
-
-    // ==========================================
-    // STYLES SPÉCIFIQUES : ACTIVITÉS
+    // STYLES SPÉCIFIQUES : INDEX/ACTIVITÉS
     // ==========================================
     actHeader: { marginBottom: 20, marginTop: 10 },
     actListContainer: { gap: 16 },

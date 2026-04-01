@@ -262,10 +262,10 @@ export default function ActivitiesScreen() {
                         {/* --- ZONE DES BOUTONS DE LA MODAL --- */}
                         <View style={{ gap: 10, marginTop: 10 }}>
                             <TouchableOpacity
-                                style={globalStyles.primaryButton}
+                                style={globalStyles.reserveActivityButton}
                                 onPress={handleReserveActivity}
                             >
-                                <Text style={globalStyles.primaryButtonText}>RÉSERVER CETTE ACTIVITÉ</Text>
+                                <Text style={globalStyles.reserveActivityButtonText}>RÉSERVER CETTE ACTIVITÉ</Text>
                             </TouchableOpacity>
 
                             <TouchableOpacity
